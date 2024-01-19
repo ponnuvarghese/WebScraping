@@ -1,4 +1,5 @@
 
+
 import scrapy
 
 class Carbon38Spider(scrapy.Spider):
@@ -7,18 +8,20 @@ class Carbon38Spider(scrapy.Spider):
 
     def parse(self, response):
         # Extracting product information
-        products = response.css('div.ProductItem')
+        products = response.xpath('//div[contains(@class, "ProductItem")]')
 
         for product in products:
-            image_url = product.css('.ProductItem__Image::attr(src)').get()
-            designer = product.css('.ProductItem__Designer::text').get()
-            name = product.css('h2.ProductItem__Title a::text').get() 
-            price = product.css('span.ProductItem__Price.Price::text').get()
+            image_url = product.xpath('.//img[contains(@class, "ProductItem__Image")]/@src').get()
+            #designer = product.xpath('.//div[contains(@class, "ProductItem__Designer")]/text()').get()
+            designer = response.xpath('//h3[@class="ProductItem__Designer"]/text()').get()
+
+            name = product.xpath('.//h2[contains(@class, "ProductItem__Title")]/a/text()').get() 
+            price = product.xpath('.//span[contains(@class, "ProductItem__Price")]/text()').get()
             
-            sizes = product.css('div.ProductItem__SizeVariants a.add-size-to-cart::text').getall()           
+            sizes = product.xpath('.//div[contains(@class, "ProductItem__SizeVariants")]/a[contains(@class, "add-size-to-cart")]/text()').getall()           
 
             # Extracting the product detail page URL
-            product_detail_url = product.css('h2.ProductItem__Title a::attr(href)').get()
+            product_detail_url = product.xpath('.//h2[contains(@class, "ProductItem__Title")]/a/@href').get()
 
             # Make a request to the product detail page to fetch additional details including color
             yield scrapy.Request(url=response.urljoin(product_detail_url), callback=self.parse_product_detail, meta={
@@ -30,14 +33,14 @@ class Carbon38Spider(scrapy.Spider):
             })
 
         # Follow pagination link to the next page if available
-        next_page_url = response.css('a.Pagination__NavItem[rel="next"]::attr(href)').get()
+        next_page_url = response.xpath('//a[contains(@class, "Pagination__NavItem") and @rel="next"]/@href').get()
         if next_page_url:
             yield scrapy.Request(url=response.urljoin(next_page_url), callback=self.parse)
 
     def parse_product_detail(self, response):
-
-         # Extracting the description from the product detail page
-        description = response.css('.Faq__Answer.Rte span[data-mce-fragment="1"]::text').get()
+        # Extracting the description from the product detail page
+        #description = response.xpath('//span[contains(@class, "Faq__Answer")]/span[@data-mce-fragment="1"]/text()').get()
+        description = response.xpath('//div[@class="Faq__Answer Rte"]/text()').get()
 
         # Check if description is available
         if description:
@@ -45,14 +48,11 @@ class Carbon38Spider(scrapy.Spider):
         else:
             description = "No description available"
 
-        
         # Extracting color information from the product detail page
-        color = response.css('span.ProductForm__SelectedValue::text').get()
+        color = response.xpath('//span[contains(@class, "ProductForm__SelectedValue")]/text()').get()
 
         # Extracting product ID
-        product_id = response.css('input[name="product-id"]::attr(value)').get()
-
-         
+        product_id = response.xpath('//input[@name="product-id"]/@value').get()
 
         # Get the product information from the meta data passed in the request
         product_info = {
@@ -62,11 +62,8 @@ class Carbon38Spider(scrapy.Spider):
             'price': response.meta['price'],
             'sizes': response.meta['sizes'],
             'color': color.strip() if color else None,
-            #'description': description.strip() if description else None
             'description': description,
             'product_id': product_id.strip() if product_id else None,
-            
-            
         }
 
         yield product_info
