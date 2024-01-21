@@ -4,6 +4,6 @@ The objective of this project is to create a web scraping tool using the Scrapy 
 
 ## Project Components:
 
-    ## Scrapy Spider:
+ ## Scrapy Spider:
     The core of the project is a Scrapy spider named Carbon38Spider. This spider navigates through the product     listings pages on Carbon38, extracts relevant information, and follows links to individual product detail      pages for more detailed data.
 
