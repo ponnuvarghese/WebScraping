@@ -1,10 +1,8 @@
-
-
 import scrapy
 
 class Carbon38Spider(scrapy.Spider):
     name = 'carbon38'
-    start_urls = ['https://carbon38.com/en-in/collections/tops?filter.p.m.custom.available_or_waitlist=1']
+    start_urls = ['https://carbon38.com/en-in/collections/tops']
 
     def parse(self, response):
         # Extracting product information
@@ -12,8 +10,7 @@ class Carbon38Spider(scrapy.Spider):
 
         for product in products:
             image_url = product.xpath('.//img[contains(@class, "ProductItem__Image")]/@src').get()
-            #designer = product.xpath('.//div[contains(@class, "ProductItem__Designer")]/text()').get()
-            designer = response.xpath('//h3[@class="ProductItem__Designer"]/text()').get()
+            designer = product.xpath('//h3[@class="ProductItem__Designer"]/text()').get()
 
             name = product.xpath('.//h2[contains(@class, "ProductItem__Title")]/a/text()').get() 
             price = product.xpath('.//span[contains(@class, "ProductItem__Price")]/text()').get()
@@ -39,14 +36,7 @@ class Carbon38Spider(scrapy.Spider):
 
     def parse_product_detail(self, response):
         # Extracting the description from the product detail page
-        #description = response.xpath('//span[contains(@class, "Faq__Answer")]/span[@data-mce-fragment="1"]/text()').get()
-        description = response.xpath('//div[@class="Faq__Answer Rte"]/text()').get()
-
-        # Check if description is available
-        if description:
-            description = description.strip()
-        else:
-            description = "No description available"
+        description = response.xpath('//span[@data-mce-fragment="1"]/text()').get()
 
         # Extracting color information from the product detail page
         color = response.xpath('//span[contains(@class, "ProductForm__SelectedValue")]/text()').get()
@@ -62,10 +52,14 @@ class Carbon38Spider(scrapy.Spider):
             'price': response.meta['price'],
             'sizes': response.meta['sizes'],
             'color': color.strip() if color else None,
-            'description': description,
+            'description': description.strip() if description else None,
             'product_id': product_id.strip() if product_id else None,
         }
 
         yield product_info
+
+
+
+        
 
 
